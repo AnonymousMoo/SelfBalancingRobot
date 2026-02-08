@@ -1,8 +1,8 @@
 // pin connections
-const int dir = 2; // direction pin
-const int step = 3; // step pin
-const int dir2 = 8;
-const int step2 = 9;
+const int dir = 16; // direction pin
+const int step = 17; // step pin
+const int dir2 = 5;
+const int step2 = 4;
 const int stepCount = 200 * 8; // step count
 const int tim = 1000;
 const int tim2 = 500;

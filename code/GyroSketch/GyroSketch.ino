@@ -80,7 +80,7 @@ void loop() {
   Serial.print(" Y: ");
   Serial.print(ay / AccVal);
   Serial.print(" Z: ");
-  Serial.print((az / AccVal) - 1);
+  Serial.print((az / AccVal));
 
   Serial.print(" | Gyro (calibrated) X: ");
   Serial.print(gx / GyrVal);
