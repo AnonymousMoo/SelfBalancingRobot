@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <MPU6050.h>
+#include <PID_v1.h>
 
 MPU6050 mpu;
 
@@ -8,9 +9,7 @@ const int dir = 17; // direction pin
 const int step = 16; // step pin
 const int dir2 = 4;
 const int step2 = 5;
-const int stepCount = 200 * 8; // step count
-const int tim = 1000;
-const int tim2 = 500;
+const int tim2 = 250;
 
 // Raw sensor values
 int16_t ax, ay, az;
@@ -26,8 +25,12 @@ const float GyrVal = 131.0;
 
 // Complementary filter variables
 float angleX = 0.0, angleY = 0.0;
-float alpha = 0.9; // Filter coefficient (0.96 = 96% gyro, 4% accel)
+float alpha = 0.86; // Filter coefficient (0.96 = 96% gyro, 4% accel)
 unsigned long lastTime = 0;
+
+double Setpoint, Input, Output;
+double Kp=2, Ki=5, Kd=1;
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 void calibrateMPU() {
   Serial.println("Calibrating MPU6050...");
@@ -62,9 +65,15 @@ void calibrateMPU() {
   Serial.println("Calibration complete");
 }
 
+float PIDFunction(float angle) {
+  Input = angle;
+  myPID.Compute();
+  return Output;
+}
+
 void MotorMove(float angle) {
   if (abs(angle) < 1) return;
-  int steps = angle;
+  int steps = angle / 0.1125;
   if (steps > 0) {
     digitalWrite(dir, LOW);
     digitalWrite(dir2, LOW);
@@ -95,6 +104,12 @@ void setup() {
   
   Serial.begin(9600);
   Wire.begin();
+
+  //initialize the variables we're linked to
+  Setpoint = 0;
+
+  //turn the PID on
+  myPID.SetMode(AUTOMATIC);
 
   Serial.println("Initializing MPU6050...");
   mpu.initialize();
@@ -143,8 +158,11 @@ void loop() {
   angleX = alpha * (angleX + gyroX * dt) + (1.0 - alpha) * accelAngleX;
   angleY = alpha * (angleY + gyroY * dt) + (1.0 - alpha) * accelAngleY;
 
+  // PID Function
+  float NangleX = PIDFunction(angleX);
+
   // Motor Reactions
-  MotorMove(angleX);
+  MotorMove(NangleX);
 
   // Print results
   Serial.print("Angle X: ");
