@@ -9,7 +9,7 @@ const int dir = 17; // direction pin
 const int step = 16; // step pin
 const int dir2 = 4;
 const int step2 = 5;
-const int tim2 = 250;
+const int tim2 = 500;
 
 // Raw sensor values
 int16_t ax, ay, az;
@@ -25,11 +25,11 @@ const float GyrVal = 131.0;
 
 // Complementary filter variables
 float angleX = 0.0, angleY = 0.0;
-float alpha = 0.86; // Filter coefficient (0.96 = 96% gyro, 4% accel)
+float alpha = 0.9; // Filter coefficient (0.96 = 96% gyro, 4% accel)
 unsigned long lastTime = 0;
 
 double Setpoint, Input, Output;
-double Kp=2, Ki=5, Kd=1;
+double Kp = 18, Ki = 0, Kd = 0.9;
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 void calibrateMPU() {
@@ -67,12 +67,15 @@ void calibrateMPU() {
 
 float PIDFunction(float angle) {
   Input = angle;
+  if (angle > 0) {
+    angle = -angle;
+  }
   myPID.Compute();
   return Output;
 }
 
 void MotorMove(float angle) {
-  if (abs(angle) < 1) return;
+  if (abs(angle) < 2) return;
   int steps = angle / 0.1125;
   if (steps > 0) {
     digitalWrite(dir, LOW);
@@ -161,6 +164,9 @@ void loop() {
   // PID Function
   float NangleX = PIDFunction(angleX);
 
+  Serial.print("PID Corrected Angle: ");
+  Serial.println(NangleX);
+
   // Motor Reactions
   MotorMove(NangleX);
 
@@ -172,4 +178,6 @@ void loop() {
   Serial.print("° | Gyro Z: ");
   Serial.print(gyroZ);
   Serial.println("°/s");
+
+  delay(400);
 }

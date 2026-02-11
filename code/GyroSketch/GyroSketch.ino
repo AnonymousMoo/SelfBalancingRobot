@@ -12,8 +12,13 @@ int32_t ax_offset = 0, ay_offset = 0, az_offset = 0;
 int32_t gx_offset = 0, gy_offset = 0, gz_offset = 0;
 
 const int CALIBRATION_SAMPLES = 1000;
-const float AccVal = 16384;
+const float AccVal = 16384.0;
 const float GyrVal = 131.0;
+
+// Complementary filter variables
+float angleX = 0.0, angleY = 0.0;
+float alpha = 0.9; // Filter coefficient
+unsigned long lastTime = 0;
 
 void calibrateMPU() {
   Serial.println("Calibrating MPU6050...");
@@ -61,9 +66,16 @@ void setup() {
   }
 
   calibrateMPU();
+  lastTime = millis();
 }
 
 void loop() {
+  // Calculate time difference
+  unsigned long currentTime = millis();
+  float dt = (currentTime - lastTime) / 1000.0; // Convert to seconds
+  lastTime = currentTime;
+
+  // Read sensor data
   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
   // Apply offsets
@@ -75,19 +87,31 @@ void loop() {
   gy -= gy_offset;
   gz -= gz_offset;
 
-  Serial.print("Accel (calibrated) X: ");
-  Serial.print(ax / AccVal);
-  Serial.print(" Y: ");
-  Serial.print(ay / AccVal);
-  Serial.print(" Z: ");
-  Serial.print((az / AccVal));
+  // Convert to physical units
+  float accelX = ax / AccVal;
+  float accelY = ay / AccVal;
+  float accelZ = az / AccVal;
 
-  Serial.print(" | Gyro (calibrated) X: ");
-  Serial.print(gx / GyrVal);
-  Serial.print(" Y: ");
-  Serial.print(gy / GyrVal);
-  Serial.print(" Z: ");
-  Serial.println(gz / GyrVal);
+  float gyroX = gx / GyrVal;
+  float gyroY = gy / GyrVal;
+  float gyroZ = gz / GyrVal;
 
-  delay(500);
+  // Calculate angles from accelerometer (in degrees)
+  float accelAngleX = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0 / PI;
+  float accelAngleY = atan2(-accelX, sqrt(accelY * accelY + accelZ * accelZ)) * 180.0 / PI;
+
+  // Integrate gyroscope data (gyro gives rate of change)
+  angleX = alpha * (angleX + gyroX * dt) + (1.0 - alpha) * accelAngleX;
+  angleY = alpha * (angleY + gyroY * dt) + (1.0 - alpha) * accelAngleY;
+
+  // Print results
+  Serial.print("Angle X: ");
+  Serial.print(angleX);
+  Serial.print("° | Angle Y: ");
+  Serial.print(angleY);
+  Serial.print("° | Gyro Z: ");
+  Serial.print(gyroZ);
+  Serial.println("°/s");
+
+  delay(100); // Faster update for better filter performance
 }
