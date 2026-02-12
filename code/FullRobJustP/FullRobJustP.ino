@@ -9,7 +9,8 @@ const int dir = 17; // direction pin
 const int step = 16; // step pin
 const int dir2 = 4;
 const int step2 = 5;
-const int tim2 = 500;
+unsigned long lastStep = 0;
+float beta = 1;
 
 // Raw sensor values
 int16_t ax, ay, az;
@@ -25,7 +26,7 @@ const float GyrVal = 131.0;
 
 // Complementary filter variables
 float angleX = 0.0, angleY = 0.0;
-float alpha = 0.9; // Filter coefficient (0.96 = 96% gyro, 4% accel)
+float alpha = 0.97; // Filter coefficient (0.96 = 96% gyro, 4% accel)
 unsigned long lastTime = 0;
 
 double Setpoint, Input, Output;
@@ -66,33 +67,21 @@ void calibrateMPU() {
 }
 
 float PIDFunction(float angle) {
+  if (abs(angle) < 1.5) return 0;
   Input = angle;
-  if (angle > 0) {
-    angle = -angle;
-  }
   myPID.Compute();
   return Output;
 }
 
 void MotorMove(float angle) {
-  if (abs(angle) < 2) return;
-  int steps = angle / 0.1125;
-  if (steps > 0) {
-    digitalWrite(dir, LOW);
-    digitalWrite(dir2, LOW);
-  } else {
-    digitalWrite(dir, HIGH);
-    digitalWrite(dir2, HIGH);
-    steps = -steps;
-  }
-
-  for (int i = 0; i < steps; i++) {
-    digitalWrite(step, HIGH);
+  if (abs(angle) < 1.5) return;
+  float interval = (-13.092 * abs(angle)) + 5013.12; // Linear relation, should change to variable hyperbola depending on single variable.
+  if (angle < 0) digitalWrite(dir2, LOW);
+  else digitalWrite(dir2, HIGH);
+  if (micros() - lastStep >= interval) {
     digitalWrite(step2, HIGH);
-    delayMicroseconds(tim2);
-    digitalWrite(step, LOW);
     digitalWrite(step2, LOW);
-    delayMicroseconds(tim2);
+    lastStep = micros();
   }
 }
 
@@ -113,9 +102,11 @@ void setup() {
 
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
+  myPID.SetOutputLimits(-360, 360);
 
   Serial.println("Initializing MPU6050...");
   mpu.initialize();
+  mpu.setDLPFMode(3);
 
   if (!mpu.testConnection()) {
     Serial.println("MPU6050 connection failed");
@@ -178,6 +169,4 @@ void loop() {
   Serial.print("° | Gyro Z: ");
   Serial.print(gyroZ);
   Serial.println("°/s");
-
-  delay(400);
 }
