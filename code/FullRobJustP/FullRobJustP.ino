@@ -5,10 +5,10 @@
 MPU6050 mpu;
 
 // pin connections
-const int dir = 17; // direction pin
-const int step = 16; // step pin
-const int dir2 = 4;
-const int step2 = 5;
+const int dir_pin_1 = 17; // dir_pin_1ection pin
+const int step_pin_1 = 16; // step_pin_1 pin
+const int dir_pin_2 = 4;
+const int step_pin_2 = 5;
 unsigned long lastStep = 0;
 float beta = 1;
 
@@ -29,9 +29,9 @@ float angleX = 0.0, angleY = 0.0;
 float alpha = 0.97; // Filter coefficient (0.96 = 96% gyro, 4% accel)
 unsigned long lastTime = 0;
 
-double Setpoint, Input, Output;
+double Setpoint = 0, Input, Output;
 double Kp = 18, Ki = 0, Kd = 0.9;
-PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, dirECT);
 
 void calibrateMPU() {
   Serial.println("Calibrating MPU6050...");
@@ -75,24 +75,33 @@ float PIDFunction(float angle) {
 
 void MotorMove(float angle) {
   if (abs(angle) < 1.5) return;
-  float interval = (-13.092 * abs(angle)) + 5013.12; // Linear relation, should change to variable hyperbola depending on single variable.
-  if (angle < 0) digitalWrite(dir2, LOW);
-  else digitalWrite(dir2, HIGH);
+  float interval = (-1.94 * abs(angle)) + 1000; // Linear relation, should change to variable hyperbola depending on single variable.
+  Serial.println(interval);
+  if (angle < 0) {
+    digitalWrite(dir_pin_2, LOW);
+    digitalWrite(dir_pin_1, LOW);
+  }
+  else {
+    digitalWrite(dir_pin_2, HIGH); 
+    digitalWrite(dir_pin_1, HIGH);
+  }
   if (micros() - lastStep >= interval) {
-    digitalWrite(step2, HIGH);
-    digitalWrite(step2, LOW);
+    digitalWrite(step_pin_2, HIGH);
+    digitalWrite(step_pin_1, HIGH);
+    digitalWrite(step_pin_2, LOW);
+    digitalWrite(step_pin_1, LOW);
     lastStep = micros();
   }
 }
 
 void setup() {
-  pinMode(dir, OUTPUT);
-  pinMode(step, OUTPUT);
-  pinMode(step2, OUTPUT);
-  pinMode(dir2, OUTPUT);
-  // set direction of rotation to clockwise
-  digitalWrite(dir, HIGH);
-  digitalWrite(dir2, HIGH);
+  pinMode(dir_pin_1, OUTPUT);
+  pinMode(step_pin_1, OUTPUT);
+  pinMode(step_pin_2, OUTPUT);
+  pinMode(dir_pin_2, OUTPUT);
+  // set dir_pin_1ection of rotation to clockwise
+  digitalWrite(dir_pin_1, HIGH);
+  digitalWrite(dir_pin_2, HIGH);
   
   Serial.begin(9600);
   Wire.begin();
