@@ -36,9 +36,9 @@ double setpoint = 0;  // Desired angle of 0 degrees
 double input, output;
 
 // PID gain control
-double Kp = 525.0;
-double Ki = 17.0;
-double Kd = 19.0;
+double Kp = 150.0;
+double Ki = 0;
+double Kd = 0;
 
 // PID controller object
 PID myPID(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
@@ -96,8 +96,9 @@ void setup() {
   }
 
   // Initialise PID controller
+  // Upper Limits correspond to a minimum step interval of 300 microseconds
   myPID.SetMode(AUTOMATIC);
-  myPID.SetOutputLimits(-10000, 10000);
+  myPID.SetOutputLimits(-1250, 1250);
 
   // Create a task for the PID loop on core 0
   xTaskCreatePinnedToCore(pidLoop, "PID Task", 10000, NULL, 2, &pidTaskHandle, 0);
@@ -148,6 +149,11 @@ void pidLoop(void *parameter) {
 
       // Map PID output to motor speeds
       motorSpeed = (int)output;
+
+      // Sets a lower limit corresponding to a 10,000 microsecond step interval
+      if (output > 100) motorSpeed = (int)output;
+      else if (output < -100) motorSpeed = (int)output;
+      else motorSpeed = 0;
 
       // Set motor directions based on PID output
       if (motorSpeed > 0) {
