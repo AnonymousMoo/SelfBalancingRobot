@@ -36,7 +36,7 @@ double setpoint = 0;  // Desired angle of 0 degrees
 double input, output;
 
 // PID gain control
-double Kp = 150.0;
+double Kp = 210.0;
 double Ki = 0;
 double Kd = 0;
 
@@ -45,7 +45,7 @@ PID myPID(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
 // Timing variables
 unsigned long lastPIDUpdate = 0;
-const unsigned long PIDInterval = 15; // PID runs every 15 seconds
+const unsigned long PIDInterval = 15; // PID runs every 15 microseconds
 
 // Task handles
 TaskHandle_t pidTaskHandle;
@@ -98,7 +98,8 @@ void setup() {
   // Initialise PID controller
   // Upper Limits correspond to a minimum step interval of 300 microseconds
   myPID.SetMode(AUTOMATIC);
-  myPID.SetOutputLimits(-1250, 1250);
+  myPID.SetOutputLimits(-2000, 2000);
+  myPID.SetSampleTime(15);
 
   // Create a task for the PID loop on core 0
   xTaskCreatePinnedToCore(pidLoop, "PID Task", 10000, NULL, 2, &pidTaskHandle, 0);
