@@ -8,3 +8,4 @@ What I've learned from this project and what can be done better:
    This could be better achieved by cascading PID, but again, at this stage, I am not familiar enough with it to proceed.
 6) It would be much more convenient to make a PCB for this rather than wiring as that led to many problems.
    Another thing to improve if I come back to this project.
+7) Make a BOM for the electrical components and put it here.
