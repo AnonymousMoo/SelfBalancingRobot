@@ -36,9 +36,9 @@ double setpoint = 0;  // Desired angle of 0 degrees
 double input, output;
 
 // PID gain control
-double Kp = 210.0;
-double Ki = 0;
-double Kd = 0;
+double Kp = 205.0;
+double Ki = 2.0;
+double Kd = 2.62;
 
 // PID controller object
 PID myPID(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
