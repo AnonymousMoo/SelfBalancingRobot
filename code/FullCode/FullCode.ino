@@ -35,7 +35,7 @@ unsigned long lastStepTime2 = 0;
 double setpoint = 0;  // Desired angle of 0 degrees
 double input, output;
 
-// PID gain control
+// PID gain control (These vary from person to person)
 double Kp = 205.0;
 double Ki = 2.0;
 double Kd = 2.62;
